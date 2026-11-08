@@ -5,7 +5,7 @@ import { useTheme } from "next-themes"
 import { useRef } from "react"
 import type { Member } from "@/lib/types"
 
-export type View = "week" | "month" | "agenda"
+export type View = "week" | "month" | "agenda" | "backlog"
 
 interface Props {
   view: View
@@ -22,17 +22,19 @@ interface Props {
   members: Member[]
   who: string | null // assignee email filter
   onWho: (email: string | null) => void
+  backlogCount: number
 }
 
 const VIEWS: { id: View; label: string }[] = [
   { id: "week", label: "สัปดาห์" },
   { id: "month", label: "เดือน" },
   { id: "agenda", label: "รายการ" },
+  { id: "backlog", label: "กองงาน" },
 ]
 
 const btn = "flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border-2 border-foreground/70 bg-card px-2.5 text-xs font-medium transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
 
-export function CalendarHeader({ view, onView, label, onPrev, onNext, onToday, onNew, onExport, onImport, user, onSignOut, members, who, onWho }: Props) {
+export function CalendarHeader({ view, onView, label, onPrev, onNext, onToday, onNew, onExport, onImport, user, onSignOut, members, who, onWho, backlogCount }: Props) {
   const { theme, setTheme } = useTheme()
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -109,6 +111,9 @@ export function CalendarHeader({ view, onView, label, onPrev, onNext, onToday, o
           {VIEWS.map((v) => (
             <button key={v.id} onClick={() => onView(v.id)} className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === v.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
               {v.label}
+              {v.id === "backlog" && backlogCount > 0 && (
+                <span className={`ml-1 rounded-full px-1.5 text-[10px] tabular-nums ${view === v.id ? "bg-primary-foreground/15" : "bg-secondary"}`}>{backlogCount}</span>
+              )}
             </button>
           ))}
         </div>
