@@ -1,149 +1,104 @@
 "use client"
 
-import { Users, ImageIcon, Repeat } from "lucide-react"
-import type { CalendarEvent } from "@/lib/calendar-types"
-import { getColorClasses, formatHour } from "@/lib/calendar-types"
-import { AI_CHARACTER_AVATAR } from "@/lib/images"
-import { useState, useRef, useCallback } from "react"
+import { Repeat, Users } from "lucide-react"
+import { useCallback, useRef, useState } from "react"
+import type { Item } from "@/lib/types"
+import { START_HOUR, fmtMin, projectColor } from "@/lib/types"
 
-interface EventBlockProps {
-  event: CalendarEvent
-  onClick: (event: CalendarEvent) => void
-  onResize: (id: string, newEndTime: number) => void
-  onDragStart: (event: CalendarEvent) => void
+interface Props {
+  item: Item
+  col: number
+  cols: number
   hourHeight: number
+  onClick: (item: Item) => void
+  onResize: (id: string, endMin: number) => void
 }
 
-export function EventBlock({
-  event,
-  onClick,
-  onResize,
-  onDragStart,
-  hourHeight,
-}: EventBlockProps) {
-  const colors = getColorClasses(event.color)
-  const [isResizing, setIsResizing] = useState(false)
-  const resizeRef = useRef<{
-    startY: number
-    startEndTime: number
-  } | null>(null)
+export function EventBlock({ item, col, cols, hourHeight, onClick, onResize }: Props) {
+  const c = projectColor(item.project)
+  const start = item.startMin ?? START_HOUR * 60
+  const end = item.endMin ?? start + 60
+  const [resizing, setResizing] = useState(false)
+  const drag = useRef<{ y: number; end: number } | null>(null)
 
   const handleResizeStart = useCallback(
     (e: React.MouseEvent) => {
       e.stopPropagation()
       e.preventDefault()
-      setIsResizing(true)
-      resizeRef.current = {
-        startY: e.clientY,
-        startEndTime: event.endTime,
+      setResizing(true)
+      drag.current = { y: e.clientY, end }
+      const move = (me: MouseEvent) => {
+        if (!drag.current) return
+        const steps = Math.round((me.clientY - drag.current.y) / (hourHeight / 2)) // 30-min steps
+        onResize(item.id, drag.current.end + steps * 30)
       }
-
-      const handleMouseMove = (me: MouseEvent) => {
-        if (!resizeRef.current) return
-        const diff = me.clientY - resizeRef.current.startY
-        const hoursDiff = Math.round(diff / hourHeight)
-        const newEnd = resizeRef.current.startEndTime + hoursDiff
-        onResize(event.id, newEnd)
+      const up = () => {
+        setResizing(false)
+        drag.current = null
+        window.removeEventListener("mousemove", move)
+        window.removeEventListener("mouseup", up)
       }
-
-      const handleMouseUp = () => {
-        setIsResizing(false)
-        resizeRef.current = null
-        window.removeEventListener("mousemove", handleMouseMove)
-        window.removeEventListener("mouseup", handleMouseUp)
-      }
-
-      window.addEventListener("mousemove", handleMouseMove)
-      window.addEventListener("mouseup", handleMouseUp)
+      window.addEventListener("mousemove", move)
+      window.addEventListener("mouseup", up)
     },
-    [event.id, event.endTime, hourHeight, onResize]
+    [end, hourHeight, item.id, onResize]
   )
 
-  const handleDragStart = useCallback(
-    (e: React.DragEvent) => {
-      e.dataTransfer.setData("text/plain", event.id)
-      e.dataTransfer.effectAllowed = "move"
-      onDragStart(event)
-    },
-    [event, onDragStart]
-  )
-
-  const duration = event.endTime - event.startTime
+  const top = ((start - START_HOUR * 60) / 60) * hourHeight
+  const height = ((end - start) / 60) * hourHeight - 2
 
   return (
     <div
       draggable
-      onDragStart={handleDragStart}
+      onDragStart={(e) => {
+        e.dataTransfer.setData("text/plain", item.id)
+        e.dataTransfer.effectAllowed = "move"
+      }}
       onClick={(e) => {
-        if (isResizing) return
+        if (resizing) return
         e.stopPropagation()
-        onClick(event)
+        onClick(item)
       }}
-      className={`group absolute inset-x-1 z-10 cursor-pointer overflow-hidden rounded-lg border-l-[3px] ${colors.border} ${colors.bg} transition-shadow hover:shadow-lg`}
+      className="group absolute z-10 cursor-pointer overflow-hidden rounded-md border border-foreground/40 shadow-[2px_2px_0_0_var(--foreground)] transition-shadow hover:shadow-[3px_3px_0_0_var(--foreground)]"
       style={{
-        top: `${(event.startTime - 8) * hourHeight}px`,
-        height: `${duration * hourHeight - 2}px`,
+        top,
+        height,
+        left: `calc(${(col / cols) * 100}% + 2px)`,
+        width: `calc(${100 / cols}% - 4px)`,
+        background: c.bg,
+        color: c.text,
       }}
-      title={`${event.title}\n${formatHour(event.startTime)} - ${formatHour(event.endTime)}${event.description ? "\n" + event.description : ""}`}
+      title={`${item.title}\n${fmtMin(start)} - ${fmtMin(end)}${item.description ? "\n" + item.description : ""}`}
     >
-      {/* AI Character avatar or custom image */}
-      <div className="absolute inset-0">
-        <img
-          src={event.imageUrl || AI_CHARACTER_AVATAR}
-          alt=""
-          className="h-full w-full object-cover opacity-25 dark:opacity-20"
-          crossOrigin="anonymous"
-        />
-        <div className={`absolute inset-0 ${colors.bg}`} />
-      </div>
-
-      <div className="relative flex h-full flex-col px-2 py-1">
+      {item.imageUrl && (
+        <img src={item.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-20" />
+      )}
+      <div className="relative flex h-full flex-col px-1.5 py-1">
         <div className="flex items-start gap-1">
-          <p className={`flex-1 truncate text-xs font-semibold leading-tight ${colors.text}`}>
-            {event.title}
-          </p>
-          {event.recurrence === "weekly" && (
-            <Repeat className={`h-3 w-3 shrink-0 ${colors.text} opacity-60`} />
-          )}
-          <ImageIcon className={`h-3 w-3 shrink-0 ${colors.text} opacity-60`} />
+          <p className="flex-1 truncate text-xs font-semibold leading-tight">{item.title}</p>
+          {item.recurrence === "weekly" && <Repeat className="h-3 w-3 shrink-0 opacity-60" />}
         </div>
-        {duration >= 2 && (
-          <p className="mt-0.5 truncate text-[10px] text-muted-foreground">
-            {formatHour(event.startTime)} - {formatHour(event.endTime)}
+        {end - start >= 60 && (
+          <p className="truncate text-[10px] opacity-70">
+            {fmtMin(start)} - {fmtMin(end)}
           </p>
         )}
-        {duration >= 2 && event.description && (
-          <p className="mt-0.5 truncate text-[10px] text-muted-foreground/70">
-            {event.description}
-          </p>
+        {end - start >= 120 && item.description && (
+          <p className="mt-0.5 line-clamp-2 text-[10px] opacity-60">{item.description}</p>
         )}
-        {duration >= 3 && (
-          <div className="mt-1 flex-1 overflow-hidden rounded">
-            <img
-              src={event.imageUrl || AI_CHARACTER_AVATAR}
-              alt=""
-              className="h-full w-full rounded object-cover"
-              crossOrigin="anonymous"
-            />
-          </div>
-        )}
-        {event.participants.length > 0 && (
-          <div className="mt-auto flex items-center gap-1 pt-0.5">
-            <Users className="h-2.5 w-2.5 text-muted-foreground" />
-            <span className="text-[10px] text-muted-foreground">
-              {event.participants.length}
-            </span>
+        {item.assignees.length > 0 && (
+          <div className="mt-auto flex items-center gap-1 pt-0.5 text-[10px] opacity-70">
+            <Users className="h-2.5 w-2.5" />
+            {item.assignees.length}
           </div>
         )}
       </div>
-
-      {/* Resize handle */}
       <div
         onMouseDown={handleResizeStart}
-        className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize opacity-0 transition-opacity group-hover:opacity-100"
         onClick={(e) => e.stopPropagation()}
+        className="absolute inset-x-0 bottom-0 h-2 cursor-ns-resize opacity-0 group-hover:opacity-100"
       >
-        <div className="mx-auto mt-0.5 h-1 w-8 rounded-full bg-muted-foreground/30" />
+        <div className="mx-auto mt-0.5 h-1 w-8 rounded-full bg-current opacity-40" />
       </div>
     </div>
   )

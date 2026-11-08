@@ -1,0 +1,94 @@
+{
+  "_note": "Selfmade project timeline in the proposed v2 Item schema. Week 1 = Mon 2026-11-09 (assumption, onsite kickoff Fri 2026-11-13). Import after phase 1 schema lands.",
+  "project": "Selfmade",
+  "items": [
+    {
+      "kind": "event",
+      "title": "Onsite Selfmade",
+      "description": "ไปหน้างานลูกค้า Selfmade (kickoff)",
+      "startDate": "2026-11-13",
+      "endDate": "2026-11-13",
+      "allDay": true,
+      "project": "Selfmade",
+      "remindDaysBefore": 1
+    },
+    {
+      "kind": "task",
+      "title": "P1 Discovery",
+      "description": "สำรวจระบบ/ข้อมูล ยืนยันฐานงานเดิม (CS และ UX/UI) และส่วนที่ต้องพัฒนาเพิ่ม กำหนด features และ CA และรับรอง Scope Baseline",
+      "startDate": "2026-11-09",
+      "endDate": "2026-11-20",
+      "allDay": true,
+      "project": "Selfmade",
+      "status": "todo",
+      "meta": { "weeks": "1-2" }
+    },
+    {
+      "kind": "task",
+      "title": "P2 Design (UX/UI)",
+      "description": "ปรับแบบ UX/UI ต่อยอดจากฐานงานเดิม",
+      "startDate": "2026-11-09",
+      "endDate": "2026-11-20",
+      "allDay": true,
+      "project": "Selfmade",
+      "status": "todo",
+      "meta": { "weeks": "1-2" }
+    },
+    {
+      "kind": "task",
+      "title": "P2 Foundation",
+      "description": "data contract, architecture, cloud และโครง backend",
+      "startDate": "2026-11-16",
+      "endDate": "2026-12-04",
+      "allDay": true,
+      "project": "Selfmade",
+      "status": "todo",
+      "meta": { "weeks": "2-4" }
+    },
+    {
+      "kind": "task",
+      "title": "P3 Credit Score",
+      "description": "ปรับ CS Engine ต่อยอดจากกรอบ CS เดิมให้คำนวณตรงกับ golden cases",
+      "startDate": "2026-11-23",
+      "endDate": "2026-12-04",
+      "allDay": true,
+      "project": "Selfmade",
+      "status": "todo",
+      "meta": { "weeks": "3-4" }
+    },
+    {
+      "kind": "task",
+      "title": "P3 Data and CA",
+      "description": "GEC ingestion, Transaction Data Platform, simulation/validation กับข้อมูลจริง, pre-scoring และ CA รุ่นทดสอบ",
+      "startDate": "2026-11-23",
+      "endDate": "2027-01-15",
+      "allDay": true,
+      "project": "Selfmade",
+      "status": "todo",
+      "meta": { "weeks": "3-10" }
+    },
+    {
+      "kind": "task",
+      "title": "P5 UAT and Hardening",
+      "description": "ทดสอบรวม ความถูกต้อง/วงเงิน ประสิทธิภาพ และ UAT 2 รอบ",
+      "startDate": "2027-01-18",
+      "endDate": "2027-02-12",
+      "allDay": true,
+      "project": "Selfmade",
+      "status": "todo",
+      "meta": { "weeks": "11-14" }
+    },
+    {
+      "kind": "task",
+      "title": "P6 Deployment and Handover",
+      "description": "pilot, production release, อบรม เอกสาร และส่งชุดส่งมอบสุดท้าย",
+      "startDate": "2027-02-15",
+      "endDate": "2027-02-26",
+      "allDay": true,
+      "project": "Selfmade",
+      "status": "todo",
+      "meta": { "weeks": "15-16" }
+    }
+  ],
+  "_excluded": "P4 ไม่รวมในสัญญานี้ ตามข้อ 4.5(ช)"
+}

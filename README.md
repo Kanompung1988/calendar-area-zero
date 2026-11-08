@@ -1,21 +1,44 @@
-# Calendar App with Firebase & Real-time Sync
+# Area Zero Calendar (v2)
 
-A beautiful, interactive weekly calendar application built with Next.js 16 and Firebase Firestore, featuring **real-time synchronization**, drag-and-drop events, color-coding, and shared event management. All users can see and add events in real-time across all devices!
+ปฏิทินงานของทีม: นัด/ประชุม (event) + งาน/deadline (task) มุมมองสัปดาห์ / เดือน / รายการ, Google login เฉพาะสมาชิก, ข้อมูลใน Firestore แบบ real-time ธีมตาม areazeroai.com
 
-## ✨ Features
+## ตั้งค่าครั้งแรก (Firebase)
 
-- 📅 **Weekly Calendar View** - Beautiful weekly layout with 8:00 AM - 10:00 PM time slots
-- 🎨 **Color-Coded Events** - 12 color options to organize your schedule
-- 🖱️ **Drag & Drop** - Easily move and resize events
-- 👥 **Participant Management** - Add participants to events
-- 🔄 **Recurring Events** - Set events to repeat weekly
-- ⚡ **Real-time Sync** - See updates instantly across all users and devices
-- 📱 **Responsive Design** - Works on desktop and mobile
-- 🌓 **Dark Mode Support** - Toggle between light and dark themes
-- 💾 **Persistent Storage** - Data stored in Firebase Firestore
-- 📥 **Import/Export** - Export and import your calendar data
+1. **Authentication → Sign-in method → Google** เปิดใช้งาน และเพิ่ม domain ที่ใช้ใน **Authorized domains** (`localhost`, `calendar.areazeroai.com`)
+2. **Firestore → Rules** วางเนื้อหาจาก [`firestore.rules`](firestore.rules) แล้ว Publish
+3. **Storage → Rules** วางเนื้อหาจาก [`storage.rules`](storage.rules) แล้ว Publish (ต้องเปิด Storage ก่อน)
+4. **Firestore → เพิ่มสมาชิก**: สร้าง collection `members` แล้วเพิ่ม document ที่ **document ID = อีเมล Google ของสมาชิก** ใส่ field `name` (string) หนึ่ง doc ต่อคน — คนที่ไม่มี doc จะ login ได้แต่เข้าปฏิทินไม่ได้
+5. `cp .env.example .env` แล้วใส่ค่า Firebase config (ชุดเดิมใช้ได้)
 
-## 🚀 Quick Start
+```bash
+npm install
+npm run dev      # http://localhost:3000
+npm test         # unit check ของ logic วันที่
+```
+
+## นำเข้าข้อมูล
+
+ปุ่ม Import (ไอคอนอัปโหลด) รับไฟล์ JSON ที่เป็น array หรือ `{ "items": [...] }` ของ item ตาม [`lib/types.ts`](lib/types.ts) ตัวอย่าง: [`scripts/seed-selfmade.json`](scripts/seed-selfmade.json) (timeline โปรเจกต์ Selfmade)
+
+ข้อมูลจาก v1 (collection `calendar_events`) ไม่ถูกย้ายอัตโนมัติ เพราะของเดิมไม่มีวันที่ ให้สร้างใหม่ตามต้องการ
+
+## โครงสร้าง
+
+- `lib/types.ts` — schema `Item`/`Member`, สีตามโปรเจกต์, helper วันที่ (วันที่เป็น `YYYY-MM-DD`, เวลาเป็นนาทีจากเที่ยงคืน ไม่มี timezone)
+- `hooks/use-auth.ts` — Google login + ตรวจ allowlist `members`
+- `hooks/use-items.ts` — อ่าน/เขียน Firestore จาก client โดยตรง (rules เป็นคนคุมสิทธิ์)
+- `components/calendar/` — `calendar.tsx` (shell), `week-view`, `month-view`, `agenda-view`, `item-modal`, `item-chip`, `event-block`
+- `firestore.rules`, `storage.rules` — ต้อง publish เองใน console
+
+## ยังไม่ทำ (เฟส 2–3 ใน `../PROPOSAL.md`)
+
+quick add, side panel, My tasks, search, email digest, iCal feed
+
+---
+
+<details><summary>v1 notes (เก่า)</summary>
+
+## Quick Start
 
 ### 1. Setup Firebase Project
 
@@ -286,3 +309,5 @@ Made with ❤️ using Next.js, Firebase, and Tailwind CSS
 ## 📸 Screenshots
 
 Add your screenshots here once deployed!
+
+</details>
