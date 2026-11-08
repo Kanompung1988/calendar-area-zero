@@ -63,7 +63,7 @@ export function SpanRow({ days, items, todayKey, maxLanes = Infinity, onCellClic
           className="absolute px-0.5"
           style={{ left: `${(start / keys.length) * 100}%`, width: `${((end - start + 1) / keys.length) * 100}%`, top: lane * LANE + 2, height: LANE - 2 }}
         >
-          <ItemChip item={it} onClick={onItemClick} onToggle={onToggle} overdue={isOverdue(it, todayKey)} className="h-full" />
+          <ItemChip item={it} onClick={onItemClick} onToggle={onToggle} overdue={isOverdue(it, todayKey)} showTime className="h-full" />
         </div>
       ))}
       {extraRow > 0 &&

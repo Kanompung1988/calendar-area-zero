@@ -16,6 +16,21 @@ npm run dev      # http://localhost:3000
 npm test         # unit check ของ logic วันที่
 ```
 
+## อีเมลสรุปทุกเช้า (08:00)
+
+Vercel Cron ยิง `/api/cron/digest` ทุกวัน 01:00 UTC = 08:00 ไทย ส่งอีเมลหาแต่ละคน **เฉพาะวันที่มีงานของคนนั้น**: เลยกำหนด / วันนี้ / 3 วันข้างหน้า / งานใหม่ที่เพิ่งถูก assign ใน 24 ชม.
+
+ตั้งค่าบน Vercel → Project → Settings → Environment Variables (ดูชื่อตัวแปรใน `.env.example`):
+
+1. `FIREBASE_SERVICE_ACCOUNT` — Firebase console → Project settings → Service accounts → Generate new private key → วาง JSON ทั้งก้อน
+2. `RESEND_API_KEY` — สมัคร [resend.com](https://resend.com) (ฟรี 3,000 ฉบับ/เดือน) ถ้ายังไม่ verify domain ให้ใช้ `EMAIL_FROM` ค่า default (`onboarding@resend.dev`) ไปก่อน ส่งได้เฉพาะอีเมลที่สมัคร Resend เท่านั้น
+3. `CRON_SECRET` — string สุ่มอะไรก็ได้ Vercel จะส่งให้ cron เอง
+4. redeploy แล้วทดสอบส่งให้ตัวเองคนเดียว:
+
+```bash
+curl -H "Authorization: Bearer $CRON_SECRET" "https://calendar.areazeroai.com/api/cron/digest?to=you@example.com"
+```
+
 ## นำเข้าข้อมูล
 
 ปุ่ม Import (ไอคอนอัปโหลด) รับไฟล์ JSON ที่เป็น array หรือ `{ "items": [...] }` ของ item ตาม [`lib/types.ts`](lib/types.ts) ตัวอย่าง: [`scripts/seed-selfmade.json`](scripts/seed-selfmade.json) (timeline โปรเจกต์ Selfmade)
@@ -24,15 +39,16 @@ npm test         # unit check ของ logic วันที่
 
 ## โครงสร้าง
 
-- `lib/types.ts` — schema `Item`/`Member`, สีตามโปรเจกต์, helper วันที่ (วันที่เป็น `YYYY-MM-DD`, เวลาเป็นนาทีจากเที่ยงคืน ไม่มี timezone)
+- `lib/types.ts` — schema `Item`/`Member`, palette สี (เลือกเองต่องาน หรือตามโปรเจกต์), helper วันที่
+- `lib/digest.ts` + `app/api/cron/digest/route.ts` — อีเมลสรุปเช้า (logic แยกเป็น pure function มี test) (วันที่เป็น `YYYY-MM-DD`, เวลาเป็นนาทีจากเที่ยงคืน ไม่มี timezone)
 - `hooks/use-auth.ts` — Google login + ตรวจ allowlist `members`
 - `hooks/use-items.ts` — อ่าน/เขียน Firestore จาก client โดยตรง (rules เป็นคนคุมสิทธิ์)
 - `components/calendar/` — `calendar.tsx` (shell), `week-view`, `month-view`, `agenda-view`, `item-modal`, `item-chip`, `event-block`
 - `firestore.rules`, `storage.rules` — ต้อง publish เองใน console
 
-## ยังไม่ทำ (เฟส 2–3 ใน `../PROPOSAL.md`)
+## ยังไม่ทำ (ดู `../PROPOSAL.md`)
 
-quick add, side panel, My tasks, search, email digest, iCal feed
+quick add บรรทัดเดียว, search, checklist ย่อย, comment, iCal feed, เตือนทันทีตอนถูก assign (ตอนนี้รวมในเมลเช้า)
 
 ---
 

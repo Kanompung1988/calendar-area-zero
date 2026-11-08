@@ -3,7 +3,7 @@
 import { ImagePlus, Trash2, X, XCircle } from "lucide-react"
 import { useEffect, useRef, useState } from "react"
 import type { Item, Kind, Member, Status } from "@/lib/types"
-import { END_HOUR, PROJECTS, START_HOUR, fmtMin } from "@/lib/types"
+import { END_HOUR, PALETTE, PROJECTS, START_HOUR, fmtMin, itemColor } from "@/lib/types"
 import { uploadImage } from "@/hooks/use-items"
 
 interface Props {
@@ -37,6 +37,8 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
   const [assignees, setAssignees] = useState<string[]>([])
   const [status, setStatus] = useState<Status>("todo")
   const [recurrence, setRecurrence] = useState(false)
+  const [color, setColor] = useState<string | undefined>()
+  const [dueTime, setDueTime] = useState("")
   const [imageUrl, setImageUrl] = useState<string | undefined>()
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState("")
@@ -58,6 +60,8 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
       setAssignees(item.assignees)
       setStatus(item.status ?? "todo")
       setRecurrence(item.recurrence === "weekly")
+      setColor(item.color)
+      setDueTime(item.dueMin !== undefined ? fmtMin(item.dueMin) : "")
       setImageUrl(item.imageUrl)
     } else {
       const h = defaults.hour < 0 ? START_HOUR + 1 : defaults.hour
@@ -73,6 +77,8 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
       setAssignees([me])
       setStatus("todo")
       setRecurrence(false)
+      setColor(undefined)
+      setDueTime(defaults.hour < 0 ? "" : fmtMin(h * 60))
       setImageUrl(undefined)
     }
   }, [open, item, defaults, me])
@@ -121,6 +127,8 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
       allDay: !timed,
       startMin: timed ? sMin : undefined,
       endMin: timed ? eMin : undefined,
+      dueMin: isTask && dueTime ? toMin(dueTime) : undefined,
+      color,
       assignees,
       project: project.trim() || undefined,
       status: isTask ? status : undefined,
@@ -175,6 +183,11 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
               <label className="flex flex-col gap-1">
                 <span className={lbl}>ครบกำหนด (due)</span>
                 <input type="date" className={inp} value={endDate} min={startDate} onChange={(e) => setEndDate(e.target.value)} />
+              </label>
+              <label className="col-span-2 flex items-center gap-3">
+                <span className={`${lbl} shrink-0 whitespace-nowrap`}>เวลาส่ง (ไม่บังคับ)</span>
+                <input type="time" step={1800} className={`${inp} w-auto`} value={dueTime} onChange={(e) => setDueTime(e.target.value)} />
+                {dueTime && <button type="button" onClick={() => setDueTime("")} className="text-xs text-muted-foreground underline">ไม่ระบุ</button>}
               </label>
             </div>
           ) : (
@@ -236,6 +249,34 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
                 </select>
               </label>
             )}
+          </div>
+
+          {/* Colour */}
+          <div className="flex flex-col gap-1.5">
+            <span className={lbl}>สี <span className="opacity-60">(ว่าง = ตามโปรเจกต์)</span></span>
+            <div className="flex flex-wrap items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setColor(undefined)}
+                title="ตามโปรเจกต์"
+                className={`flex h-7 items-center rounded-full border-2 px-2 text-[11px] font-medium ${color === undefined ? "border-foreground" : "border-foreground/25 text-muted-foreground"}`}
+                style={color === undefined ? { background: itemColor({ project }).bg, color: itemColor({ project }).text } : undefined}
+              >
+                auto
+              </button>
+              {Object.entries(PALETTE).map(([key, c]) => (
+                <button
+                  key={key}
+                  type="button"
+                  aria-label={key}
+                  onClick={() => setColor(key)}
+                  className={`h-7 w-7 rounded-full border-2 transition-transform ${color === key ? "scale-110 border-foreground" : "border-foreground/20 hover:scale-105"}`}
+                  style={{ background: c.bg }}
+                >
+                  {color === key && <span className="block text-center text-[11px] font-bold leading-6" style={{ color: c.text }}>✓</span>}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Assignees */}

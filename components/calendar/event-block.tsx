@@ -3,7 +3,7 @@
 import { Repeat, Users } from "lucide-react"
 import { useCallback, useRef, useState } from "react"
 import type { Item } from "@/lib/types"
-import { START_HOUR, fmtMin, projectColor } from "@/lib/types"
+import { START_HOUR, fmtMin, itemColor } from "@/lib/types"
 
 interface Props {
   item: Item
@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function EventBlock({ item, col, cols, hourHeight, onClick, onResize }: Props) {
-  const c = projectColor(item.project)
+  const c = itemColor(item)
   const start = item.startMin ?? START_HOUR * 60
   const end = item.endMin ?? start + 60
   const [resizing, setResizing] = useState(false)
