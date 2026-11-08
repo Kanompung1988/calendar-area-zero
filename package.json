@@ -4,10 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:demo": "NEXT_PUBLIC_DEMO=1 next dev -p 3100",
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "add-samples": "node --env-file=.env scripts/add-sample-events.mjs"
+    "test": "node --test lib/*.test.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
