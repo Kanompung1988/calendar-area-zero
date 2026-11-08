@@ -5,6 +5,7 @@ service cloud.firestore {
     function isMember() {
       return request.auth != null
         && request.auth.token.email != null
+        && request.auth.token.email_verified == true
         && exists(/databases/$(database)/documents/members/$(request.auth.token.email));
     }
     match /members/{email} {

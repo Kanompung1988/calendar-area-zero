@@ -16,6 +16,9 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 export const db = getFirestore(app)
 export const storage = getStorage(app)
 export const googleProvider = new GoogleAuthProvider()
+// Always show the account chooser: access is by email allowlist, so people with several
+// Google accounts must be able to pick the one the admin added.
+googleProvider.setCustomParameters({ prompt: "select_account" })
 
 // getAuth() validates the API key at init, which breaks `next build` prerender
 // when env vars are absent; resolve it lazily from the browser instead.

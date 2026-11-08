@@ -1,233 +1,81 @@
-# 🔥 Firebase Setup Guide
+# ตั้งค่า Firebase + Google login (v2)
 
-คู่มือการติดตั้ง Firebase สำหรับ Calendar App แบบละเอียด
+Firebase project ที่ใช้: `areazero-e50b8` (ค่า config อยู่ใน Vercel env และ `.env.local`)
 
-## ขั้นตอนที่ 1: สร้าง Firebase Project
+ระบบทำงานแบบนี้: ล็อกอินด้วย Google → Firestore rules เช็คว่าอีเมลมี document ใน `members/{อีเมล}` หรือไม่ → ถ้ามีถึงเห็นและแก้ปฏิทินได้ ดังนั้นต้องทำครบทุกข้อด้านล่างก่อนจึงจะเข้าใช้งานได้
 
-1. เปิด [Firebase Console](https://console.firebase.google.com/)
-2. คลิก **"Add project"** หรือ **"เพิ่มโปรเจกต์"**
-3. ตั้งชื่อโปรเจกต์ เช่น `"my-calendar-app"`
-4. (Optional) เปิดใช้งาน Google Analytics
-5. คลิก **"Create project"**
+## 0. ลงทะเบียน Web app และเปิด Firestore
 
-## ขั้นตอนที่ 2: สร้าง Firestore Database
+- [Project settings → General](https://console.firebase.google.com/project/areazero-e50b8/settings/general) → **Add app** → Web (`</>`) → ตั้งชื่อ → Register app (ไม่ต้องติ๊ก Hosting) แล้วคัดลอก `firebaseConfig` เก็บไว้ใส่ใน env ทั้ง 6 ตัว (ดูหัวข้อ Environment variables)
+- [Firestore Database → Create database](https://console.firebase.google.com/project/areazero-e50b8/firestore) → เลือก **Production mode** และ location (เช่น `asia-southeast1`) ซึ่งเปลี่ยนทีหลังไม่ได้
 
-1. ในเมนูด้านซ้าย คลิก **"Firestore Database"**
-2. คลิก **"Create database"**
-3. เลือกโหมด:
-   - **Production mode** (แนะนำ) - ต้องตั้งค่า Security Rules
-   - **Test mode** - เปิดให้ทุกคนเข้าถึงได้ 30 วัน
-4. เลือก Location ที่ใกล้คุณที่สุด เช่น:
-   - `asia-southeast1` (Singapore)
-   - `asia-northeast1` (Tokyo)
-5. คลิก **"Enable"**
+## 1. เปิด Google sign-in
 
-## ขั้นตอนที่ 3: ตั้งค่า Security Rules
+[Authentication → Sign-in method](https://console.firebase.google.com/project/areazero-e50b8/authentication/providers) → **Google** → Enable → เลือก support email → Save
 
-1. ไปที่ **Firestore Database** > **Rules**
-2. คัดลอกโค้ดนี้:
+ถ้ายังไม่เปิด ปุ่มล็อกอินจะแจ้งว่า "ยังไม่ได้เปิด Google sign-in" (`auth/operation-not-allowed`)
 
-### สำหรับการใช้งานสาธารณะ (ทุกคนใช้ร่วมกันได้)
+## 2. เพิ่ม Authorized domains
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /calendar_events/{document=**} {
-      // อนุญาตให้ทุกคนอ่านและเขียนได้
-      allow read, write: if true;
-    }
-  }
-}
-```
+[Authentication → Settings → Authorized domains](https://console.firebase.google.com/project/areazero-e50b8/authentication/settings) → Add domain ให้ครบทุกโดเมนที่เปิดแอปจริง:
 
-### สำหรับการใช้งานแบบจำกัด (ต้อง login ก่อน)
+- `localhost` และ `areazero-e50b8.firebaseapp.com` (มีให้แล้ว)
+- `calendar.areazeroai.com`
+- `calendar-areazero.vercel.app`
+- `calendar-area-zero.vercel.app`
 
-```javascript
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /calendar_events/{document=**} {
-      // เฉพาะผู้ใช้ที่ล็อกอินแล้วเท่านั้น
-      allow read, write: if request.auth != null;
-    }
-  }
-}
-```
+ถ้าขาด ปุ่มล็อกอินจะแจ้ง `auth/unauthorized-domain` พร้อมชื่อโดเมน หมายเหตุ: URL preview ของ Vercel (`*-git-xxx-….vercel.app`) ใช้ wildcard ไม่ได้ ถ้าจะทดสอบล็อกอินบน preview ต้องเพิ่มทีละ URL
 
-3. คลิก **"Publish"**
-
-## ขั้นตอนที่ 4: รับ Firebase Configuration
-
-1. คลิกไอคอน **⚙️ Settings** (ตั้งค่า)
-2. เลือก **Project settings**
-3. เลื่อนลงมาที่ **"Your apps"**
-4. คลิกไอคอน **`</>`** (Web)
-5. ตั้งชื่อแอพ เช่น `"Calendar Web App"`
-6. ไม่ต้องเลือก "Firebase Hosting" (เราจะใช้ Vercel)
-7. คลิก **"Register app"**
-8. คัดลอกค่าใน `firebaseConfig`:
-
-```javascript
-const firebaseConfig = {
-  apiKey: "AIzaSy...",
-  authDomain: "your-project.firebaseapp.com",
-  projectId: "your-project-id",
-  storageBucket: "your-project.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abc..."
-};
-```
-
-## ขั้นตอนที่ 5: ตั้งค่า Environment Variables
-
-### สำหรับ Local Development
-
-1. สร้างไฟล์ `.env` ในโฟลเดอร์โปรเจกต์:
+## 3. Publish rules
 
 ```bash
-cp .env.example .env
+npx firebase-tools login
+npx firebase-tools deploy --only firestore:rules
 ```
 
-2. เปิดไฟล์ `.env` และใส่ค่าจาก Firebase:
+(`firebase.json` / `.firebaserc` ตั้งไว้แล้ว) หรือเปิด Firestore → Rules แล้ววางเนื้อหาจาก [`firestore.rules`](firestore.rules) → Publish
 
-```env
-NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSy...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789
-NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789:web:abc...
-```
+rules ชุดนี้ปฏิเสธทุก collection ที่ไม่ได้ระบุไว้ และอนุญาต `items` กับ `members` เฉพาะผู้ที่อยู่ในรายชื่อ `members` เท่านั้น
 
-⚠️ **สำคัญ:** อย่าลืม prefix `NEXT_PUBLIC_` เพราะค่าเหล่านี้จะถูกใช้ใน browser
+## 4. เพิ่มสมาชิกทีม
 
-### สำหรับ Vercel Deployment
+[Firestore → Data](https://console.firebase.google.com/project/areazero-e50b8/firestore/data) → Start collection `members` แล้วเพิ่ม document หนึ่งอันต่อคน
 
-1. ไปที่ Vercel Dashboard
-2. เลือกโปรเจกต์ของคุณ
-3. ไปที่ **Settings** > **Environment Variables**
-4. เพิ่มตัวแปรทีละตัว:
-   - Name: `NEXT_PUBLIC_FIREBASE_API_KEY`
-   - Value: `AIzaSy...`
-   - คลิก **"Add"**
-5. ทำซ้ำกับตัวแปรทั้งหมด 6 ตัว
-6. Redeploy โปรเจกต์
+| ช่อง | ค่า |
+| --- | --- |
+| Document ID | อีเมล Google ของสมาชิก **ตัวพิมพ์เล็กทั้งหมด** เช่น `fin@areazeroai.com` |
+| `name` (string) | ชื่อที่แสดง |
 
-## ขั้นตอนที่ 6: เพิ่มข้อมูลตัวอย่าง (Optional)
+เพิ่มตัวเองก่อนเป็นคนแรก เพราะ rules ไม่ให้สร้าง/ลบสมาชิกจากในแอป (ต้องทำใน console เท่านั้น) คนที่ล็อกอินแล้วแต่ไม่มี document จะเห็นหน้า "ยังไม่อยู่ในรายชื่อทีม" พร้อมปุ่มคัดลอกอีเมลส่งให้ admin
 
-คุณสามารถเพิ่มข้อมูล event ตัวอย่างใน Firestore Console:
+## 5. (ถ้าต้องการอัปโหลดรูป) เปิด Storage
 
-1. ไปที่ **Firestore Database** > **Data**
-2. คลิก **"Start collection"**
-3. Collection ID: `calendar_events`
-4. เพิ่ม Document แรก:
+[Storage → Get started](https://console.firebase.google.com/project/areazero-e50b8/storage) แล้ว
 
-```
-Document ID: (Auto-ID)
-
-Fields:
-- title (string): "Team Meeting"
-- description (string): "Weekly sync"
-- day (number): 0
-- start_time (number): 9
-- end_time (number): 10
-- participants (array): ["Alice", "Bob"]
-- color (string): "blue"
-- recurrence (string): "weekly"
-- image_url (string): null
-- created_at (timestamp): [คลิก "Set to current time"]
-```
-
-5. คลิก **"Save"**
-
-## ขั้นตอนที่ 7: ทดสอบ
-
-1. รันโปรเจกต์:
 ```bash
-pnpm dev
+npx firebase-tools deploy --only storage
 ```
 
-2. เปิด http://localhost:3000
+โปรเจกต์ใหม่อาจต้องอัปเกรดเป็นแผน Blaze จึงจะสร้าง bucket ได้ ถ้ายังไม่เปิด แอปใช้งานได้ปกติ ยกเว้นการแนบรูปจะแจ้ง "อัปโหลดรูปไม่สำเร็จ"
 
-3. ทดสอบ:
-   - ✅ เห็น event ที่เพิ่มไว้หรือไม่
-   - ✅ เพิ่ม event ใหม่ได้หรือไม่
-   - ✅ ลบ event ได้หรือไม่
-   - ✅ เปิดอีก tab/browser แล้วเห็นข้อมูลเดียวกันหรือไม่ (real-time sync)
+## Environment variables
 
-## 🔒 Security Best Practices
+ต้องมีครบ 6 ตัวทั้งใน local และ Vercel (ดูชื่อใน [`.env.example`](.env.example))
 
-### 1. ปกป้อง API Key
+```bash
+vercel link --project calendar-areazero
+vercel env pull .env.local     # ดึงค่าลง .env.local สำหรับรัน local
+```
 
-- API Key ใน Firebase **ไม่ใช่ Secret** สามารถเปิดเผยได้
-- Security จริงๆ อยู่ที่ **Firestore Rules**
-- ถ้าต้องการความปลอดภัยสูง ให้เพิ่ม Authentication
+เปลี่ยนค่า env บน Vercel แล้วต้อง Redeploy เพราะค่า `NEXT_PUBLIC_*` ถูกฝังตอน build
 
-### 2. จำกัด Domain (Recommended)
+## แก้ปัญหาที่เจอบ่อย
 
-1. ไปที่ Firebase Console > **Authentication** > **Settings**
-2. เพิ่ม Authorized domains:
-   - `localhost` (สำหรับ dev)
-   - `your-app.vercel.app` (สำหรับ production)
-
-### 3. ตั้งค่า Budget Alerts
-
-1. ไปที่ Google Cloud Console
-2. เลือกโปรเจกต์เดียวกัน
-3. ไปที่ **Billing** > **Budgets & alerts**
-4. สร้าง budget alert เพื่อป้องกันค่าใช้จ่ายเกิน
-
-## 💰 ค่าใช้จ่าย
-
-### Firebase Free Tier (Spark Plan)
-
-- **Firestore:**
-  - 1 GB storage
-  - 50K reads/day
-  - 20K writes/day
-  - 20K deletes/day
-
-สำหรับแอพ Calendar ขนาดเล็ก-กลาง ใช้ฟรีได้เลย!
-
-### เมื่อไหร่ต้องอัพเกรด
-
-- มีผู้ใช้มากกว่า 50-100 คน
-- มี events มากกว่า 1000 รายการ
-- ต้องการ backup อัตโนมัติ
-
-## 🆘 แก้ปัญหา
-
-### ❌ "Firebase: Error (auth/api-key-not-valid)"
-
-- เช็คว่า API Key ถูกต้อง
-- เช็คว่าใส่ prefix `NEXT_PUBLIC_` ครบ
-- ลอง copy-paste ใหม่จาก Firebase Console
-
-### ❌ "Missing or insufficient permissions"
-
-- เช็ค Firestore Rules
-- ถ้าใช้ Test mode ดูว่าหมดอายุหรือยัง
-- ลองเปลี่ยนเป็น `allow read, write: if true;`
-
-### ❌ "Firebase: Firebase App named '[DEFAULT]' already exists"
-
-- ปิด/เปิด dev server ใหม่
-- Clear browser cache
-- ตรวจสอบว่าไม่มีการ import `firebase/config` ซ้ำ
-
-### ❌ Events ไม่ sync real-time
-
-- เช็ค console logs
-- ตรวจสอบว่าไม่มี error ใน Firestore listener
-- ลองรีโหลดหน้าเว็บ
-
-## 📚 เอกสารเพิ่มเติม
-
-- [Firebase Documentation](https://firebase.google.com/docs)
-- [Firestore Security Rules](https://firebase.google.com/docs/firestore/security/get-started)
-- [Vercel Environment Variables](https://vercel.com/docs/concepts/projects/environment-variables)
-
----
-
-หากมีปัญหา สามารถเปิด Issue ใน GitHub หรือติดต่อทีมพัฒนา
+| อาการ | สาเหตุ |
+| --- | --- |
+| กดล็อกอินแล้วแจ้ง "ยังไม่ได้เปิด Google sign-in" | ข้อ 1 ยังไม่ทำ |
+| แจ้ง `auth/unauthorized-domain` | ข้อ 2: โดเมนนั้นยังไม่อยู่ใน Authorized domains |
+| ล็อกอินได้แต่ขึ้น "ยังไม่อยู่ในรายชื่อทีม" | ข้อ 4: ยังไม่มี `members/{อีเมล}` หรือพิมพ์ใหญ่/เล็กไม่ตรง หรือยังไม่ publish rules (ข้อ 3) |
+| ล็อกอินแล้วหมุนค้าง / ข้อมูลไม่ขึ้น | เปิด DevTools ดู error `Missing or insufficient permissions` → ข้อ 3 และ 4 |
+| บันทึก/ลบแล้วขึ้น "บันทึกไม่สำเร็จ" | ไม่ใช่สมาชิก หรือ rules ยังเป็นของ v1 |
+| แจ้ง `auth/popup-blocked` | เบราว์เซอร์บล็อก popup ให้อนุญาตสำหรับเว็บนี้ |
