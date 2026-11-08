@@ -3,6 +3,7 @@
 import { ChevronLeft, ChevronRight, Download, LogOut, Moon, Plus, Sun, Upload } from "lucide-react"
 import { useTheme } from "next-themes"
 import { useRef } from "react"
+import type { Member } from "@/lib/types"
 
 export type View = "week" | "month" | "agenda"
 
@@ -18,6 +19,9 @@ interface Props {
   onImport: (text: string) => void
   user: { name: string; avatar?: string | null }
   onSignOut: () => void
+  members: Member[]
+  who: string | null // assignee email filter
+  onWho: (email: string | null) => void
 }
 
 const VIEWS: { id: View; label: string }[] = [
@@ -28,7 +32,7 @@ const VIEWS: { id: View; label: string }[] = [
 
 const btn = "flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg border-2 border-foreground/70 bg-card px-2.5 text-xs font-medium transition-colors hover:bg-secondary focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
 
-export function CalendarHeader({ view, onView, label, onPrev, onNext, onToday, onNew, onExport, onImport, user, onSignOut }: Props) {
+export function CalendarHeader({ view, onView, label, onPrev, onNext, onToday, onNew, onExport, onImport, user, onSignOut, members, who, onWho }: Props) {
   const { theme, setTheme } = useTheme()
   const fileRef = useRef<HTMLInputElement>(null)
 
@@ -77,12 +81,37 @@ export function CalendarHeader({ view, onView, label, onPrev, onNext, onToday, o
           <button onClick={onNext} className={`${btn} w-8 justify-center px-0`} aria-label="Next"><ChevronRight className="h-4 w-4" /></button>
           <h2 className="ml-1.5 truncate font-display text-sm font-semibold sm:ml-2 sm:text-base">{label}</h2>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* people filter */}
+          <div className="flex items-center gap-1" role="group" aria-label="กรองตามคน">
+            <button
+              onClick={() => onWho(null)}
+              className={`h-7 rounded-full border-2 px-2 text-[11px] font-medium transition-colors ${who === null ? "border-foreground bg-foreground text-background" : "border-foreground/30 text-muted-foreground hover:border-foreground/60"}`}
+            >
+              ทุกคน
+            </button>
+            {members.map((m) => {
+              const on = who === m.email
+              return (
+                <button
+                  key={m.email}
+                  onClick={() => onWho(on ? null : m.email)}
+                  title={m.name}
+                  aria-pressed={on}
+                  className={`flex h-7 min-w-7 items-center justify-center rounded-full border-2 px-1.5 text-[11px] font-semibold transition-all ${on ? "scale-105 border-foreground bg-primary text-primary-foreground" : "border-foreground/30 bg-card text-muted-foreground hover:border-foreground/60"}`}
+                >
+                  {m.avatar ? <img src={m.avatar} alt="" className="h-5 w-5 rounded-full" referrerPolicy="no-referrer" /> : m.name.slice(0, 4)}
+                </button>
+              )
+            })}
+          </div>
         <div className="flex rounded-lg border-2 border-foreground/70 bg-card p-0.5">
           {VIEWS.map((v) => (
             <button key={v.id} onClick={() => onView(v.id)} className={`rounded-md px-2.5 py-1 text-xs font-medium transition-colors ${view === v.id ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground"}`}>
               {v.label}
             </button>
           ))}
+        </div>
         </div>
       </div>
     </header>

@@ -14,10 +14,12 @@ export interface Item {
   startDate: string
   endDate: string // inclusive; task: due date
   allDay: boolean
-  startMin?: number // only when !allDay
+  startMin?: number // event only, when !allDay
   endMin?: number
+  dueMin?: number // task only: optional time of day for the deadline
   assignees: string[] // member emails
   project?: string
+  color?: string // PALETTE key; when absent, colour follows the project
   status?: Status // task only
   imageUrl?: string
   recurrence?: "weekly" // event only: repeats every week from startDate
@@ -36,21 +38,27 @@ export const START_HOUR = 8
 export const END_HOUR = 22
 export const HOURS = Array.from({ length: END_HOUR - START_HOUR }, (_, i) => START_HOUR + i)
 
-// Project → colour, palettes taken from areazeroai.com academies.
-export const PROJECTS: Record<string, { bg: string; text: string }> = {
-  KAPI: { bg: "#2f4a3e", text: "#f1f0e6" },
-  "U-Talk": { bg: "#3a5a4d", text: "#f1f0e6" },
-  "Taro.ai": { bg: "#4a6a58", text: "#f1f0e6" },
-  MEDX: { bg: "#ddefea", text: "#0e3b3a" },
-  PhatoX: { bg: "#cbe8f3", text: "#0e3b3a" },
-  Remedy: { bg: "#bfe3dc", text: "#0e3b3a" },
-  JODJAM: { bg: "#f6e3c4", text: "#3b2516" },
-  CHAI: { bg: "#f2dccb", text: "#3b2516" },
-  Nongsai: { bg: "#fff1bf", text: "#3b2516" },
-  Selfmade: { bg: "#dad7f2", text: "#231e33" },
+// Colours taken from areazeroai.com academies. Items pick one directly, or inherit from their project.
+export const PALETTE: Record<string, { bg: string; text: string }> = {
+  forest: { bg: "#2f4a3e", text: "#f1f0e6" },
+  moss: { bg: "#4a6a58", text: "#f1f0e6" },
+  mint: { bg: "#ddefea", text: "#0e3b3a" },
+  sky: { bg: "#cbe8f3", text: "#0e3b3a" },
+  sand: { bg: "#f6e3c4", text: "#3b2516" },
+  peach: { bg: "#f2dccb", text: "#3b2516" },
+  butter: { bg: "#fff1bf", text: "#3b2516" },
+  lavender: { bg: "#dad7f2", text: "#231e33" },
+  rose: { bg: "#f3d6d3", text: "#5a1f1a" },
+  slate: { bg: "#e6ece4", text: "#16241c" },
 }
-export const DEFAULT_COLOR = { bg: "#e6ece4", text: "#16241c" }
-export const projectColor = (p?: string) => (p && PROJECTS[p]) || DEFAULT_COLOR
+export const PROJECTS: Record<string, string> = {
+  KAPI: "forest", "U-Talk": "moss", "Taro.ai": "moss",
+  MEDX: "mint", PhatoX: "sky", Remedy: "mint",
+  JODJAM: "sand", CHAI: "peach", Nongsai: "butter",
+  Selfmade: "lavender",
+}
+export const itemColor = (it: Pick<Item, "color" | "project">) =>
+  PALETTE[it.color ?? ""] ?? PALETTE[PROJECTS[it.project ?? ""] ?? "slate"]
 
 export const toKey = (d: Date) => format(d, "yyyy-MM-dd")
 export const fromKey = (k: string) => parseISO(k)

@@ -5,7 +5,7 @@ import { addDays, format } from "date-fns"
 import { th } from "date-fns/locale"
 import { Check, Repeat } from "lucide-react"
 import type { Item, Member } from "@/lib/types"
-import { fmtMin, fromKey, isOverdue, occursOn, projectColor, toKey } from "@/lib/types"
+import { fmtMin, fromKey, isOverdue, itemColor, occursOn, toKey } from "@/lib/types"
 
 const DAYS_AHEAD = 30
 
@@ -40,7 +40,7 @@ function Avatars({ emails, members }: { emails: string[]; members: Member[] }) {
 }
 
 function Row({ it, members, overdue, onItemClick, onToggle }: { it: Item; members: Member[]; overdue?: boolean; onItemClick: (i: Item) => void; onToggle: (i: Item) => void }) {
-  const c = projectColor(it.project)
+  const c = itemColor(it)
   const done = it.status === "done"
   return (
     <div
@@ -51,7 +51,7 @@ function Row({ it, members, overdue, onItemClick, onToggle }: { it: Item; member
       className={`group flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-card focus-visible:outline-2 focus-visible:outline-primary ${done ? "opacity-50" : ""}`}
     >
       <div className="w-12 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
-        {it.allDay ? (it.kind === "task" ? "ส่ง" : "ทั้งวัน") : fmtMin(it.startMin!)}
+        {it.kind === "task" ? (it.dueMin !== undefined ? fmtMin(it.dueMin) : "ส่ง") : it.allDay ? "ทั้งวัน" : fmtMin(it.startMin!)}
       </div>
       {it.kind === "task" ? (
         <button
@@ -94,7 +94,7 @@ export function AgendaView({ from, items, members, todayKey, onItemClick, onTogg
     () =>
       Array.from({ length: DAYS_AHEAD }, (_, i) => {
         const key = toKey(addDays(from, i))
-        const on = items.filter((it) => agendaOn(it, key)).sort((a, b) => Number(b.allDay) - Number(a.allDay) || (a.startMin ?? 0) - (b.startMin ?? 0))
+        const on = items.filter((it) => agendaOn(it, key)).sort((a, b) => (a.startMin ?? a.dueMin ?? -1) - (b.startMin ?? b.dueMin ?? -1))
         return { key, on }
       }).filter((d) => d.on.length > 0),
     [from, items]

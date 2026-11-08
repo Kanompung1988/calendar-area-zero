@@ -2,7 +2,7 @@
 
 import { Check, Repeat } from "lucide-react"
 import type { Item } from "@/lib/types"
-import { fmtMin, projectColor } from "@/lib/types"
+import { fmtMin, itemColor } from "@/lib/types"
 
 interface Props {
   item: Item
@@ -14,7 +14,7 @@ interface Props {
 }
 
 export function ItemChip({ item, onClick, onToggle, showTime, overdue, className = "" }: Props) {
-  const c = projectColor(item.project)
+  const c = itemColor(item)
   const done = item.status === "done"
   return (
     <div
@@ -41,8 +41,8 @@ export function ItemChip({ item, onClick, onToggle, showTime, overdue, className
           {done && <Check className="h-2.5 w-2.5" style={{ color: c.bg }} strokeWidth={3} />}
         </button>
       )}
-      {showTime && !item.allDay && item.startMin !== undefined && (
-        <span className="shrink-0 tabular-nums opacity-70">{fmtMin(item.startMin)}</span>
+      {showTime && (item.allDay ? item.dueMin : item.startMin) !== undefined && (
+        <span className="shrink-0 tabular-nums opacity-70">{fmtMin((item.allDay ? item.dueMin : item.startMin)!)}</span>
       )}
       <span className={`truncate ${done ? "line-through" : ""}`}>{item.title}</span>
       {item.recurrence === "weekly" && <Repeat className="ml-auto h-2.5 w-2.5 shrink-0 opacity-50" />}

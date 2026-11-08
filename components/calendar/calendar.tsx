@@ -22,6 +22,7 @@ interface Props {
 export function Calendar({ me, members, onSignOut }: Props) {
   const { items, loaded, save, patch, remove, importItems } = useItems()
   const [view, setView] = useState<View>("week")
+  const [who, setWho] = useState<string | null>(null)
   const [cursor, setCursor] = useState(() => new Date())
   const [modal, setModal] = useState<{ open: boolean; item: Item | null; defaults: { dateKey: string; hour: number } }>({
     open: false,
@@ -34,6 +35,7 @@ export function Calendar({ me, members, onSignOut }: Props) {
     if (window.innerWidth < 768) setView("agenda")
   }, [])
 
+  const visible = useMemo(() => (who ? items.filter((i) => i.assignees.includes(who)) : items), [items, who])
   const days = useMemo(() => weekDays(cursor), [cursor])
   const label = useMemo(() => {
     if (view === "month") return format(cursor, "MMMM yyyy", { locale: th })
@@ -114,15 +116,18 @@ export function Calendar({ me, members, onSignOut }: Props) {
         onImport={importJson}
         user={me}
         onSignOut={onSignOut}
+        members={members}
+        who={who}
+        onWho={setWho}
       />
       <div className="flex flex-1 overflow-auto">
         {view === "week" && (
-          <WeekView days={days} items={items} todayKey={todayKey} onSlotClick={openNew} onItemClick={openEdit} onToggle={toggle} onMove={move} onResize={resize} />
+          <WeekView days={days} items={visible} todayKey={todayKey} onSlotClick={openNew} onItemClick={openEdit} onToggle={toggle} onMove={move} onResize={resize} />
         )}
         {view === "month" && (
-          <MonthView month={cursor} items={items} todayKey={todayKey} onDayClick={(k) => openNew(k, -1)} onItemClick={openEdit} onToggle={toggle} />
+          <MonthView month={cursor} items={visible} todayKey={todayKey} onDayClick={(k) => openNew(k, -1)} onItemClick={openEdit} onToggle={toggle} />
         )}
-        {view === "agenda" && <AgendaView from={weekStart(cursor)} items={items} members={members} todayKey={todayKey} onItemClick={openEdit} onToggle={toggle} />}
+        {view === "agenda" && <AgendaView from={weekStart(cursor)} items={visible} members={members} todayKey={todayKey} onItemClick={openEdit} onToggle={toggle} />}
       </div>
       <ItemModal
         open={modal.open}
