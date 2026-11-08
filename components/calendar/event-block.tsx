@@ -27,9 +27,12 @@ export function EventBlock({ item, col, cols, hourHeight, onClick, onResize }: P
       e.preventDefault()
       setResizing(true)
       drag.current = { y: e.clientY, end }
+      let lastSteps = 0
       const move = (me: MouseEvent) => {
         if (!drag.current) return
         const steps = Math.round((me.clientY - drag.current.y) / (hourHeight / 2)) // 30-min steps
+        if (steps === lastSteps) return // each call is a Firestore write; only write when the size actually changes
+        lastSteps = steps
         onResize(item.id, drag.current.end + steps * 30)
       }
       const up = () => {

@@ -4,11 +4,13 @@
 
 ## ตั้งค่าครั้งแรก (Firebase)
 
-1. **Authentication → Sign-in method → Google** เปิดใช้งาน และเพิ่ม domain ที่ใช้ใน **Authorized domains** (`localhost`, `calendar.areazeroai.com`)
-2. **Firestore → Rules** วางเนื้อหาจาก [`firestore.rules`](firestore.rules) แล้ว Publish
-3. **Storage → Rules** วางเนื้อหาจาก [`storage.rules`](storage.rules) แล้ว Publish (ต้องเปิด Storage ก่อน)
-4. **Firestore → เพิ่มสมาชิก**: สร้าง collection `members` แล้วเพิ่ม document ที่ **document ID = อีเมล Google ของสมาชิก** ใส่ field `name` (string) หนึ่ง doc ต่อคน — คนที่ไม่มี doc จะ login ได้แต่เข้าปฏิทินไม่ได้
-5. `cp .env.example .env` แล้วใส่ค่า Firebase config (ชุดเดิมใช้ได้)
+รายละเอียดทีละขั้นอยู่ใน [`FIREBASE_SETUP.md`](FIREBASE_SETUP.md) สรุปคือ
+
+1. **Authentication → Sign-in method → Google** เปิดใช้งาน และเพิ่ม domain ที่ใช้ใน **Authorized domains** (`localhost`, `calendar.areazeroai.com`, โดเมน `*.vercel.app` ที่ใช้)
+2. Publish rules: `npx firebase-tools login` แล้ว `npx firebase-tools deploy --only firestore:rules` (หรือวางเนื้อหาจาก [`firestore.rules`](firestore.rules) ใน console)
+3. **Firestore → เพิ่มสมาชิก**: สร้าง collection `members` แล้วเพิ่ม document ที่ **document ID = อีเมล Google ของสมาชิก (ตัวพิมพ์เล็ก)** ใส่ field `name` (string) หนึ่ง doc ต่อคน — คนที่ไม่มี doc จะ login ได้แต่เข้าปฏิทินไม่ได้
+4. (ไม่บังคับ) เปิด Storage แล้ว `npx firebase-tools deploy --only storage` เพื่อให้แนบรูปได้
+5. ค่า Firebase config: `vercel link --project calendar-areazero && vercel env pull .env.local` หรือ `cp .env.example .env.local` แล้วใส่เอง
 
 ```bash
 npm install

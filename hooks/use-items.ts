@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import {
-  collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc, updateDoc, writeBatch,
+  collection, deleteDoc, deleteField, doc, onSnapshot, serverTimestamp, setDoc, updateDoc, writeBatch,
 } from "firebase/firestore"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 import { db, storage } from "@/lib/firebase/config"
@@ -11,8 +11,15 @@ import { DEMO, demoItems } from "@/lib/demo"
 
 const col = collection(db, "items")
 
-// Firestore rejects `undefined`; strip it so optional fields can be cleared.
+// Firestore rejects `undefined`. Writes use merge/update, so merely dropping a key would leave
+// the old value in the document (e.g. a removed image or an unticked "weekly"); send deleteField()
+// instead so cleared optional fields are actually cleared.
+const withDeletes = (o: object) =>
+  Object.fromEntries(Object.entries(o).map(([k, v]) => [k, v === undefined ? deleteField() : v]))
+// For brand-new docs there is nothing to delete, so just drop undefined keys.
 const clean = (o: object) => JSON.parse(JSON.stringify(o))
+
+const BATCH_MAX = 400 // Firestore allows 500 writes per batch
 
 export function useItems() {
   const [items, setItems] = useState<Item[]>([])
@@ -48,17 +55,18 @@ export function useItems() {
     items,
     loaded,
     save: (item: Item) =>
-      setDoc(doc(col, item.id), { ...clean(item), updatedAt: serverTimestamp() }, { merge: true }),
+      setDoc(doc(col, item.id), { ...withDeletes(item), updatedAt: serverTimestamp() }, { merge: true }),
     patch: (id: string, data: Partial<Item>) =>
-      updateDoc(doc(col, id), { ...clean(data), updatedAt: serverTimestamp() }),
+      updateDoc(doc(col, id), { ...withDeletes(data), updatedAt: serverTimestamp() }),
     remove: (id: string) => deleteDoc(doc(col, id)),
     importItems: async (list: Omit<Item, "id">[], createdBy: string) => {
-      const batch = writeBatch(db) // ponytail: 500 writes max per batch, fine for seed files
-      for (const it of list) {
-        const d = doc(col)
-        batch.set(d, { ...clean(it), createdBy, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
+      for (let i = 0; i < list.length; i += BATCH_MAX) {
+        const batch = writeBatch(db)
+        for (const it of list.slice(i, i + BATCH_MAX)) {
+          batch.set(doc(col), { ...clean(it), createdBy, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
+        }
+        await batch.commit()
       }
-      await batch.commit()
       return list.length
     },
   }
