@@ -87,7 +87,7 @@ function Row({ it, members, overdue, onItemClick, onToggle }: { it: Item; member
 
 export function AgendaView({ from, items, members, todayKey, onItemClick, onToggle }: Props) {
   const overdue = useMemo(
-    () => items.filter((it) => isOverdue(it, todayKey)).sort((a, b) => a.endDate.localeCompare(b.endDate)),
+    () => items.filter((it) => isOverdue(it, todayKey)).sort((a, b) => a.endDate!.localeCompare(b.endDate!)),
     [items, todayKey]
   )
   const days = useMemo(

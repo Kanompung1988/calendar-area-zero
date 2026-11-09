@@ -19,13 +19,13 @@ const addDays = (key: string, n: number) => {
 
 export function buildDigest(items: DigestItem[], email: string, todayKey: string, nowMs: number): Digest {
   const mine = items.filter((it) => it.assignees.includes(email))
-  const openTask = (it: DigestItem) => it.kind === "task" && it.status !== "done"
+  const openTask = (it: DigestItem) => it.kind === "task" && it.status !== "done" && !!it.endDate
   const soonKeys = [1, 2, 3].map((n) => addDays(todayKey, n))
   const byTime = (a: DigestItem, b: DigestItem) => (a.startMin ?? a.dueMin ?? -1) - (b.startMin ?? b.dueMin ?? -1)
   return {
-    overdue: mine.filter((it) => openTask(it) && it.endDate < todayKey).sort((a, b) => a.endDate.localeCompare(b.endDate)),
+    overdue: mine.filter((it) => openTask(it) && it.endDate! < todayKey).sort((a, b) => a.endDate!.localeCompare(b.endDate!)),
     today: mine.filter((it) => (openTask(it) ? it.endDate === todayKey : it.kind === "event" && occursOn(it, todayKey))).sort(byTime),
-    soon: mine.filter((it) => openTask(it) && soonKeys.includes(it.endDate)).sort((a, b) => a.endDate.localeCompare(b.endDate)),
+    soon: mine.filter((it) => openTask(it) && soonKeys.includes(it.endDate!)).sort((a, b) => a.endDate!.localeCompare(b.endDate!)),
     assigned: mine.filter((it) => it.createdAtMs !== undefined && nowMs - it.createdAtMs < 24 * 3600 * 1000 && it.status !== "done"),
   }
 }
@@ -38,7 +38,7 @@ const thDate = (key: string) =>
 
 function line(it: DigestItem, showDate: boolean) {
   const time = it.kind === "task" ? (it.dueMin !== undefined ? fmtMin(it.dueMin) : "") : it.allDay ? "ทั้งวัน" : `${fmtMin(it.startMin!)}–${fmtMin(it.endMin!)}`
-  const meta = [showDate ? thDate(it.endDate) : "", time, it.project].filter(Boolean).join(" · ")
+  const meta = [showDate && it.endDate ? thDate(it.endDate) : "", time, it.project].filter(Boolean).join(" · ")
   return `<li style="margin:0 0 6px"><strong>${esc(it.title)}</strong>${meta ? ` <span style="color:#4a5a50">— ${esc(meta)}</span>` : ""}</li>`
 }
 

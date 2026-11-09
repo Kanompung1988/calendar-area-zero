@@ -12,7 +12,7 @@ interface Props {
   onSave: (item: Item) => void
   onDelete: (id: string) => void
   item: Item | null
-  defaults: { dateKey: string; hour: number } // hour -1 = all-day
+  defaults: { dateKey: string; hour: number; undated?: boolean } // hour -1 = all-day; undated = backlog task
   members: Member[]
   me: string
 }
@@ -38,6 +38,7 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
   const [status, setStatus] = useState<Status>("todo")
   const [recurrence, setRecurrence] = useState(false)
   const [color, setColor] = useState<string | undefined>()
+  const [undated, setUndated] = useState(false)
   const [dueTime, setDueTime] = useState("")
   const [imageUrl, setImageUrl] = useState<string | undefined>()
   const [uploading, setUploading] = useState(false)
@@ -52,8 +53,9 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
       setTitle(item.title)
       setDescription(item.description ?? "")
       setProject(item.project ?? "")
-      setStartDate(item.startDate)
-      setEndDate(item.endDate)
+      setStartDate(item.startDate ?? defaults.dateKey)
+      setEndDate(item.endDate ?? defaults.dateKey)
+      setUndated(item.kind === "task" && !item.startDate)
       setAllDay(item.allDay)
       setStartTime(fmtMin(item.startMin ?? START_HOUR * 60))
       setEndTime(fmtMin(item.endMin ?? START_HOUR * 60 + 60))
@@ -66,6 +68,7 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
     } else {
       const h = defaults.hour < 0 ? START_HOUR + 1 : defaults.hour
       setKind(defaults.hour < 0 ? "task" : "event")
+      setUndated(!!defaults.undated)
       setTitle("")
       setDescription("")
       setProject("")
@@ -93,6 +96,7 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
   if (!open) return null
 
   const isTask = kind === "task"
+  const backlog = isTask && undated
   const timed = !isTask && !allDay
 
   const handleImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -122,12 +126,12 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
       kind,
       title: title.trim(),
       description: description.trim() || undefined,
-      startDate,
-      endDate: end,
+      startDate: backlog ? undefined : startDate,
+      endDate: backlog ? undefined : end,
       allDay: !timed,
       startMin: timed ? sMin : undefined,
       endMin: timed ? eMin : undefined,
-      dueMin: isTask && dueTime ? toMin(dueTime) : undefined,
+      dueMin: isTask && !backlog && dueTime ? toMin(dueTime) : undefined,
       color,
       assignees,
       project: project.trim() || undefined,
@@ -176,6 +180,11 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
           {/* Dates */}
           {isTask ? (
             <div className="grid grid-cols-2 gap-3">
+              <label className="col-span-2 flex items-center gap-2 text-sm">
+                <input type="checkbox" checked={undated} onChange={(e) => setUndated(e.target.checked)} className="h-4 w-4 accent-[var(--primary)]" />
+                ยังไม่กำหนดวัน <span className="text-xs text-muted-foreground">(เก็บไว้ในกองงาน)</span>
+              </label>
+              {!undated && (<>
               <label className="flex flex-col gap-1">
                 <span className={lbl}>เริ่ม</span>
                 <input type="date" className={inp} value={startDate} onChange={(e) => { setStartDate(e.target.value); if (endDate < e.target.value) setEndDate(e.target.value) }} />
@@ -189,6 +198,7 @@ export function ItemModal({ open, onClose, onSave, onDelete, item, defaults, mem
                 <input type="time" step={1800} className={`${inp} w-auto`} value={dueTime} onChange={(e) => setDueTime(e.target.value)} />
                 {dueTime && <button type="button" onClick={() => setDueTime("")} className="text-xs text-muted-foreground underline">ไม่ระบุ</button>}
               </label>
+              </>)}
             </div>
           ) : (
             <>

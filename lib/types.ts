@@ -11,8 +11,8 @@ export interface Item {
   kind: Kind
   title: string
   description?: string
-  startDate: string
-  endDate: string // inclusive; task: due date
+  startDate?: string // task without dates = backlog ("กองงาน"); events always have dates
+  endDate?: string // inclusive; task: due date
   allDay: boolean
   startMin?: number // event only, when !allDay
   endMin?: number
@@ -66,7 +66,10 @@ export const weekStart = (d: Date) => startOfWeek(d, { weekStartsOn: 1 })
 export const weekDays = (d: Date) => Array.from({ length: 7 }, (_, i) => addDays(weekStart(d), i))
 export const fmtMin = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`
 
+export const isDated = (item: Item): item is Item & { startDate: string; endDate: string } => !!item.startDate && !!item.endDate
+
 export function occursOn(item: Item, key: string): boolean {
+  if (!isDated(item)) return false
   if (item.recurrence === "weekly") {
     return key >= item.startDate && fromKey(key).getDay() === fromKey(item.startDate).getDay()
   }
@@ -74,4 +77,4 @@ export function occursOn(item: Item, key: string): boolean {
 }
 
 export const isOverdue = (item: Item, todayKey: string) =>
-  item.kind === "task" && item.status !== "done" && item.endDate < todayKey
+  item.kind === "task" && item.status !== "done" && !!item.endDate && item.endDate < todayKey

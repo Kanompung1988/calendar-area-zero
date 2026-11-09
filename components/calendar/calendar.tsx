@@ -5,12 +5,13 @@ import { addDays, addMonths, format } from "date-fns"
 import { th } from "date-fns/locale"
 import { toast } from "sonner"
 import type { Item, Member } from "@/lib/types"
-import { END_HOUR, toKey, weekDays, weekStart } from "@/lib/types"
+import { END_HOUR, isDated, toKey, weekDays, weekStart } from "@/lib/types"
 import { useItems } from "@/hooks/use-items"
 import { CalendarHeader, type View } from "./calendar-header"
 import { WeekView } from "./week-view"
 import { MonthView } from "./month-view"
 import { AgendaView } from "./agenda-view"
+import { BacklogView } from "./backlog-view"
 import { ItemModal } from "./item-modal"
 
 interface Props {
@@ -24,7 +25,7 @@ export function Calendar({ me, members, onSignOut }: Props) {
   const [view, setView] = useState<View>("week")
   const [who, setWho] = useState<string | null>(null)
   const [cursor, setCursor] = useState(() => new Date())
-  const [modal, setModal] = useState<{ open: boolean; item: Item | null; defaults: { dateKey: string; hour: number } }>({
+  const [modal, setModal] = useState<{ open: boolean; item: Item | null; defaults: { dateKey: string; hour: number; undated?: boolean } }>({
     open: false,
     item: null,
     defaults: { dateKey: toKey(new Date()), hour: 9 },
@@ -36,10 +37,12 @@ export function Calendar({ me, members, onSignOut }: Props) {
   }, [])
 
   const visible = useMemo(() => (who ? items.filter((i) => i.assignees.includes(who)) : items), [items, who])
+  const backlog = useMemo(() => visible.filter((i) => i.kind === "task" && !isDated(i) && i.status !== "done"), [visible])
   const days = useMemo(() => weekDays(cursor), [cursor])
   const label = useMemo(() => {
     if (view === "month") return format(cursor, "MMMM yyyy", { locale: th })
     if (view === "agenda") return `30 วันจาก ${format(cursor, "d MMM", { locale: th })}`
+    if (view === "backlog") return "งานที่ยังไม่ลงวัน"
     const [a, b] = [days[0], days[6]]
     return a.getMonth() === b.getMonth()
       ? `${format(a, "d")} – ${format(b, "d MMM yyyy", { locale: th })}`
@@ -48,7 +51,7 @@ export function Calendar({ me, members, onSignOut }: Props) {
 
   const step = view === "month" ? (n: number) => addMonths(cursor, n) : (n: number) => addDays(cursor, 7 * n)
 
-  const openNew = useCallback((dateKey: string, hour: number) => setModal({ open: true, item: null, defaults: { dateKey, hour } }), [])
+  const openNew = useCallback((dateKey: string, hour: number, undated = false) => setModal({ open: true, item: null, defaults: { dateKey, hour, undated } }), [])
   const openEdit = useCallback((item: Item) => setModal((m) => ({ ...m, open: true, item })), [])
   const close = useCallback(() => setModal((m) => ({ ...m, open: false, item: null })), [])
 
@@ -81,9 +84,10 @@ export function Calendar({ me, members, onSignOut }: Props) {
       if (!Array.isArray(list)) throw new Error("no items")
       const ok = list.filter((x): x is Omit<Item, "id"> => {
         const o = x as Partial<Item>
-        return !!o?.title && !!o.startDate && !!o.endDate && (o.kind === "task" || o.kind === "event")
+        const dated = !!o?.startDate && !!o?.endDate
+        return !!o?.title && (o.kind === "task" ? dated || (!o.startDate && !o.endDate) : o.kind === "event" && dated)
       })
-      if (ok.length === 0) throw new Error("ไม่พบรายการที่มี title/startDate/endDate/kind")
+      if (ok.length === 0) throw new Error("ไม่พบรายการที่มี title/kind (event ต้องมี startDate/endDate)")
       const n = await importItems(
         ok.map(({ id: _id, ...rest }: Partial<Item>) => ({ assignees: [], allDay: true, ...rest })) as Omit<Item, "id">[],
         me.email
@@ -111,7 +115,7 @@ export function Calendar({ me, members, onSignOut }: Props) {
         onPrev={() => setCursor(step(-1))}
         onNext={() => setCursor(step(1))}
         onToday={() => setCursor(new Date())}
-        onNew={() => openNew(todayKey, -1)}
+        onNew={() => openNew(todayKey, -1, view === "backlog")}
         onExport={exportJson}
         onImport={importJson}
         user={me}
@@ -119,6 +123,7 @@ export function Calendar({ me, members, onSignOut }: Props) {
         members={members}
         who={who}
         onWho={setWho}
+        backlogCount={backlog.length}
       />
       <div className="flex flex-1 overflow-auto">
         {view === "week" && (
@@ -126,6 +131,17 @@ export function Calendar({ me, members, onSignOut }: Props) {
         )}
         {view === "month" && (
           <MonthView month={cursor} items={visible} todayKey={todayKey} onDayClick={(k) => openNew(k, -1)} onItemClick={openEdit} onToggle={toggle} />
+        )}
+        {view === "backlog" && (
+          <BacklogView
+            items={backlog}
+            members={members}
+            onItemClick={openEdit}
+            onToggle={toggle}
+            onQuickAdd={(title) =>
+              save({ id: crypto.randomUUID(), kind: "task", title, allDay: true, status: "todo", assignees: who ? [who] : [me.email], createdBy: me.email }).catch(() => toast.error("บันทึกไม่สำเร็จ"))
+            }
+          />
         )}
         {view === "agenda" && <AgendaView from={weekStart(cursor)} items={visible} members={members} todayKey={todayKey} onItemClick={openEdit} onToggle={toggle} />}
       </div>

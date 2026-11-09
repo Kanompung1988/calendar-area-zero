@@ -26,3 +26,9 @@ test("overdue = task past due and not done", () => {
   assert.equal(isOverdue({ ...base, status: "done" }, "2026-11-21"), false)
   assert.equal(isOverdue({ ...base, kind: "event" }, "2026-11-21"), false)
 })
+
+test("undated (backlog) task never shows on a day and is never overdue", () => {
+  const b: Item = { ...base, startDate: undefined, endDate: undefined }
+  assert.equal(occursOn(b, "2026-11-09"), false)
+  assert.equal(isOverdue(b, "2027-01-01"), false)
+})

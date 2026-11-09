@@ -1,6 +1,6 @@
 # Area Zero Calendar (v2)
 
-ปฏิทินงานของทีม: นัด/ประชุม (event) + งาน/deadline (task) มุมมองสัปดาห์ / เดือน / รายการ, Google login เฉพาะสมาชิก, ข้อมูลใน Firestore แบบ real-time ธีมตาม areazeroai.com
+ปฏิทินงานของทีม: นัด/ประชุม (event) + งาน/deadline (task) + กองงานที่ยังไม่ลงวัน (backlog) มุมมองสัปดาห์ / เดือน / รายการ / กองงาน, กรองรายคน, Google login เฉพาะสมาชิก, ข้อมูลใน Firestore แบบ real-time ธีมตาม areazeroai.com
 
 ## ตั้งค่าครั้งแรก (Firebase)
 
@@ -45,12 +45,12 @@ curl -H "Authorization: Bearer $CRON_SECRET" "https://calendar.areazeroai.com/ap
 - `lib/digest.ts` + `app/api/cron/digest/route.ts` — อีเมลสรุปเช้า (logic แยกเป็น pure function มี test) (วันที่เป็น `YYYY-MM-DD`, เวลาเป็นนาทีจากเที่ยงคืน ไม่มี timezone)
 - `hooks/use-auth.ts` — Google login + ตรวจ allowlist `members`
 - `hooks/use-items.ts` — อ่าน/เขียน Firestore จาก client โดยตรง (rules เป็นคนคุมสิทธิ์)
-- `components/calendar/` — `calendar.tsx` (shell), `week-view`, `month-view`, `agenda-view`, `item-modal`, `item-chip`, `event-block`
+- `components/calendar/` — `calendar.tsx` (shell), `week-view`, `month-view`, `agenda-view`, `backlog-view` (งานไม่มีวัน + quick add), `item-modal`, `item-chip`, `event-block`, `span-row`
 - `firestore.rules`, `storage.rules` — ต้อง publish เองใน console
 
 ## ยังไม่ทำ (ดู `../PROPOSAL.md`)
 
-quick add บรรทัดเดียว, search, checklist ย่อย, comment, iCal feed, เตือนทันทีตอนถูก assign (ตอนนี้รวมในเมลเช้า)
+search, checklist ย่อย, comment, iCal feed, เตือนทันทีตอนถูก assign (ตอนนี้รวมในเมลเช้า), ลาก chip ย้ายวันใน month view
 
 ---
 

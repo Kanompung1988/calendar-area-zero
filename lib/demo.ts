@@ -39,6 +39,11 @@ export function demoItems(): Item[] {
     task("t3", "สรุป feedback U-Talk", 1, { project: "U-Talk", status: "done" }),
     task("t4", "เตรียมสไลด์ onsite", 4, { project: "Selfmade", status: "doing" }),
     { ...task("t5", "เขียน blog PhatoX", 9, { project: "PhatoX" }), startDate: today },
+    // backlog: no dates yet
+    { id: "b1", kind: "task", title: "งานโรงบาลพี่นัส", allDay: true, status: "todo", project: "MEDX", ...base },
+    { id: "b2", kind: "task", title: "งานจีน", allDay: true, status: "todo", assignees: [demoMembers[1].email], createdBy: demoMe.email },
+    { id: "b3", kind: "task", title: "งาน sims", allDay: true, status: "doing", description: "รอ requirement จากลูกค้า", ...base },
+    { id: "b4", kind: "task", title: "งาน smart", allDay: true, status: "todo", assignees: [demoMembers[3].email, demoMe.email], createdBy: demoMe.email },
     ...seeded,
   ]
 }
